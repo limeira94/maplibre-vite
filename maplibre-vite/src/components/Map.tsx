@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
 import '@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css';
-import 'maplibre-gl/dist/maplibre-gl.css';
-import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
+// import 'maplibre-gl/dist/maplibre-gl.css';
+import MaplibreGeocoder from '@maplibre/maplibre-gl-geocoder';
+import '@maplibre/maplibre-gl-geocoder/dist/maplibre-gl-geocoder.css';
 
 const MAPTILER_KEY = 'get_your_own_OpIi9ZULNHzrESv6T2vL';
 
@@ -11,10 +12,10 @@ const Map: React.FC = () => {
 
     useEffect(() => {
         const map = new maplibregl.Map({
-            container: 'map', // container id
+            container: 'map', 
             style: `https://api.maptiler.com/maps/basic-v2/style.json?key=${MAPTILER_KEY}`,
-            center: [-74.0066, 40.7135], // starting position [lng, lat]
-            zoom: 15.5, // starting zoom
+            center: [-46.62529, -23.53377], // [lng, lat]
+            zoom: 13.5,
             pitch: 45,
             bearing: -17.6,
             antialias: true
@@ -24,15 +25,47 @@ const Map: React.FC = () => {
         map.addControl(new maplibregl.ScaleControl(), 'bottom-right');
         map.addControl(new maplibregl.LogoControl({ compact: false }));
 
-        const geocoder = new MapboxGeocoder({
-            accessToken: 'pk.eyJ1IjoibGltZWlyYWZlbGlwZSIsImEiOiJjbHplbnMyZW4weHk0MmpvZXFkZGplc2RyIn0.qL2A7ZuWiBiV0jjPCnVRAg', // Substitua pelo seu token de acesso Mapbox
-            mapboxgl: maplibregl,
-            placeholder: 'Search for places',
+        const geocoderApi = {
+            forwardGeocode: async (config) => {
+                const features = [];
+                try {
+                    const request = `https://nominatim.openstreetmap.org/search?q=${config.query}&format=geojson&polygon_geojson=1&addressdetails=1`;
+                    const response = await fetch(request);
+                    const geojson = await response.json();
+                    for (const feature of geojson.features) {
+                        const center = [
+                            feature.bbox[0] + (feature.bbox[2] - feature.bbox[0]) / 2,
+                            feature.bbox[1] + (feature.bbox[3] - feature.bbox[1]) / 2
+                        ];
+                        const point = {
+                            type: 'Feature',
+                            geometry: {
+                                type: 'Point',
+                                coordinates: center
+                            },
+                            place_name: feature.properties.display_name,
+                            properties: feature.properties,
+                            text: feature.properties.display_name,
+                            place_type: ['place'],
+                            center
+                        };
+                        features.push(point);
+                    }
+                } catch (e) {
+                    console.error(`Failed to forwardGeocode with error: ${e}`);
+                }
+
+                return {
+                    features
+                };
+            }
+        };
+
+        const geocoder = new MaplibreGeocoder(geocoderApi, {
+            maplibregl
         });
 
-        // Adiciona o geocoder em um elemento específico fora do mapa
-        document.getElementById('geocoder').appendChild(geocoder.onAdd(map));
-        
+        map.addControl(geocoder, 'top-left');
 
         map.on('load', () => {
             const layers = map.getStyle().layers;
@@ -87,39 +120,10 @@ const Map: React.FC = () => {
         return () => map.remove();
     }, []);
 
-    const changeStyle = () => {
-        if (mapRef.current) {
-            mapRef.current.setStyle({
-                version: 8,
-                sources: {
-                    osm: {
-                        type: 'raster',
-                        tiles: [
-                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
-                        ],
-                        tileSize: 256
-                    }
-                },
-                layers: [
-                    {
-                        id: 'osm',
-                        type: 'raster',
-                        source: 'osm',
-                        minzoom: 0,
-                        maxzoom: 19
-                    }
-                ]
-            });
-        }
-    };
 
     return (
-        <div style={{ width: '100%', height: '100vh', position: 'relative' }}>
+        <div style={{ width: '100%', height: '100%', position: 'absolute' }}>
             <div id="map" style={{ width: '100%', height: '100%' }}></div>
-            <div id="geocoder" style={{ position: 'absolute', top: 10, left: 20, zIndex: 1 }}></div>
-            {/* <button onClick={changeStyle} style={{ position: 'absolute', top: 10, left: 10, zIndex: 1 }}>
-                Change Style
-            </button> */}
         </div>
     );
 };

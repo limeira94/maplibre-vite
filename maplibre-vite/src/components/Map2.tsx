@@ -35,7 +35,7 @@ const Map: React.FC = () => {
             zoom: 5 // starting zoom
         });
 
-        map.addControl(new maplibregl.NavigationControl(), 'top-right'); //controls zoom and rotation map
+        map.addControl(new maplibregl.NavigationControl(), 'top-right'); 
         map.addControl(new maplibregl.ScaleControl(), 'bottom-right')
         map.addControl(new maplibregl.LogoControl({compact: false}));
 
