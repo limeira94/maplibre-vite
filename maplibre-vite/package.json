@@ -10,7 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@emotion/react": "^11.13.0",
+    "@emotion/styled": "^11.13.0",
     "@maplibre/maplibre-gl-geocoder": "^1.5.0",
+    "@mui/material": "^5.16.6",
     "@types/events": "^3.0.3",
     "events": "^3.3.0",
     "maplibre-gl": "^4.5.1",

@@ -3,6 +3,8 @@ import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import MaplibreGeocoder from '@maplibre/maplibre-gl-geocoder';
 import '@maplibre/maplibre-gl-geocoder/dist/maplibre-gl-geocoder.css';
+import { Box, Button, Drawer, Typography } from '@mui/material';
+import Logo from '../assets/Maplibre-logo.png';
 
 const MAPTILER_KEY = 'get_your_own_OpIi9ZULNHzrESv6T2vL';
 
@@ -67,7 +69,7 @@ const Map: React.FC = () => {
         });
 
 
-        map.addControl(geocoder as any, 'top-left');
+        map.addControl(geocoder as any, 'top-right');
 
         map.on('load', () => {
             const layers = map.getStyle().layers;
@@ -122,11 +124,83 @@ const Map: React.FC = () => {
         return () => map.remove();
     }, []);
 
+    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files && event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const data = JSON.parse(reader.result as string);
+                if (mapRef.current) {
+                    mapRef.current.addSource('uploaded-geojson', {
+                        type: 'geojson',
+                        data: data
+                    });
+                    mapRef.current.addLayer({
+                        id: 'uploaded-geojson-layer',
+                        type: 'line',
+                        source: 'uploaded-geojson',
+                        paint: {
+                            'line-color': '#ff0000',
+                            'line-width': 2
+                        }
+                    });
+                }
+            };
+            reader.readAsText(file);
+        }
+    };
 
     return (
-        <div style={{ width: '100%', height: '100%', position: 'absolute' }}>
-            <div id="map" style={{ width: '100%', height: '100%' }}></div>
-        </div>
+        <>
+            <Drawer
+                variant="permanent"
+                anchor="left"
+                sx={{
+                    width: 0,
+                    flexShrink: 0,
+                    '& .MuiDrawer-paper': {
+                        width: 350,
+                        boxSizing: 'border-box',
+                        backgroundColor: 'white',
+                    },
+                }}
+            >
+                <Box
+                    sx={{
+                        width: '100%',
+                        height: 60,
+                        backgroundColor: 'silver',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'left',
+
+                        color: 'black',
+                        fontSize: 25,
+                    }}
+                >
+                    <img src={Logo} alt="Logo" style={{ height: '30px', padding: '10px' }} />
+                    MapLibre
+                </Box>
+                <Box sx={{ p: 2 }}>
+                    
+                    <input
+                        accept=".geojson"
+                        style={{ display: 'none' }}
+                        id="geojson-upload"
+                        type="file"
+                        onChange={handleFileUpload}
+                    />
+                    <label htmlFor="geojson-upload">
+                        <Button variant="contained" component="span" sx={{backgroundColor: 'black'}}>
+                            Upload geojson
+                        </Button>
+                    </label>
+                </Box>
+            </Drawer>
+            <div style={{ width: '100%', height: '100%', position: 'absolute' }}>
+                <div id="map" style={{ width: '100%', height: '100%' }}></div>
+            </div>
+        </>
     );
 };
 
