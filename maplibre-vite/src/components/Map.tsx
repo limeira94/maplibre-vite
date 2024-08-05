@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
-import '@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css';
-// import 'maplibre-gl/dist/maplibre-gl.css';
+import 'maplibre-gl/dist/maplibre-gl.css';
 import MaplibreGeocoder from '@maplibre/maplibre-gl-geocoder';
 import '@maplibre/maplibre-gl-geocoder/dist/maplibre-gl-geocoder.css';
 
@@ -12,7 +11,7 @@ const Map: React.FC = () => {
 
     useEffect(() => {
         const map = new maplibregl.Map({
-            container: 'map', 
+            container: 'map',
             style: `https://api.maptiler.com/maps/basic-v2/style.json?key=${MAPTILER_KEY}`,
             center: [-46.62529, -23.53377], // [lng, lat]
             zoom: 13.5,
@@ -26,7 +25,7 @@ const Map: React.FC = () => {
         map.addControl(new maplibregl.LogoControl({ compact: false }));
 
         const geocoderApi = {
-            forwardGeocode: async (config) => {
+            forwardGeocode: async (config: { query: any; }) => {
                 const features = [];
                 try {
                     const request = `https://nominatim.openstreetmap.org/search?q=${config.query}&format=geojson&polygon_geojson=1&addressdetails=1`;
@@ -61,11 +60,14 @@ const Map: React.FC = () => {
             }
         };
 
-        const geocoder = new MaplibreGeocoder(geocoderApi, {
-            maplibregl
+
+        const geocoder = new MaplibreGeocoder({
+            forwardGeocode: geocoderApi.forwardGeocode,
+            maplibregl: maplibregl as any
         });
 
-        map.addControl(geocoder, 'top-left');
+
+        map.addControl(geocoder as any, 'top-left');
 
         map.on('load', () => {
             const layers = map.getStyle().layers;
